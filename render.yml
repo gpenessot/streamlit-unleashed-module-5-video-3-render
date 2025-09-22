@@ -1,0 +1,23 @@
+# Définit la version du blueprint de Render.
+services:
+  # Définit un service unique pour notre application Streamlit.
+  - type: web
+    # Nom du service qui apparaîtra dans le dashboard Render.
+    name: streamlit-app-express
+    # Spécifie que le service s'exécute dans un environnement Docker.
+    env: docker
+    # URL de l'image Docker à utiliser.
+    # Render va "pull" cette image depuis Docker Hub.
+    # Assurez-vous que DOCKERHUB_USERNAME correspond à votre nom d'utilisateur
+    # et que le repository est public, ou configurez les identifiants d'un registry privé dans Render.
+    image:
+      url: docker.io/gpenessot/streamlit-app-express:latest
+    # Mappage des ports. Render route le trafic vers le port interne que vous spécifiez.
+    # Streamlit écoute sur le port 8501 à l'intérieur du conteneur.
+    envVars:
+      - key: PORT
+        value: 8501
+    # Vérification de santé. Render va régulièrement interroger ce chemin
+    # pour s'assurer que l'application est en bonne santé.
+    healthCheck:
+      path: /healthz

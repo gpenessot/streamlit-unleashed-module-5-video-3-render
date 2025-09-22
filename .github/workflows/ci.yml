@@ -1,0 +1,56 @@
+# Nom du workflow qui apparaîtra dans l'onglet "Actions" de GitHub
+name: CI - Build and Test Streamlit App
+
+# Déclencheurs du workflow
+on:
+  push:
+    branches: [ "main" ] # Sur les push vers la branche main
+  pull_request:
+    branches: [ "main" ] # Sur les pull requests ciblant la branche main
+
+# Définit les jobs à exécuter
+jobs:
+  build-and-test:
+    # Le type de machine virtuelle sur laquelle exécuter le job
+    runs-on: ubuntu-latest
+
+    # Séquence d'étapes à exécuter pour ce job
+    steps:
+      # Étape 1: Récupère le code du repository sur la machine virtuelle
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Étape 2: Configure l'environnement Python
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      # Étape 3: Installe les dépendances Python
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # Étape 4: Lance les tests avec pytest
+      # Le pipeline s'arrêtera ici si un test échoue
+      - name: Run tests
+        run: |
+          export PYTHONPATH="${PYTHONPATH}:."
+          pytest
+
+      # Étape 5: Connexion à un registry Docker (ex: Docker Hub)
+      # Nécessite de configurer DOCKERHUB_USERNAME et DOCKERHUB_TOKEN dans les "Secrets" du repository GitHub
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # Étape 6: Build et Push de l'image Docker
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: . # Le contexte de build est le répertoire courant
+          push: true # "push" l'image vers le registry après le build
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/streamlit-app-express:latest # Le nom de l'image, ex: "mon-user/streamlit-app-express:latest"
